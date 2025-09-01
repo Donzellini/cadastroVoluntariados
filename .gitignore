@@ -1,0 +1,16 @@
+# Node.js
+node_modules/
+
+# Banco de dados
+*.db
+/database/*.db
+
+# Logs
+*.log
+
+# Live Server
+.vscode/
+
+# Outros arquivos temporários
+.DS_Store
+*.tmp
