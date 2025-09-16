@@ -14,15 +14,18 @@ const db = new sqlite3.Database('../database/voluntariado.db', (err) => {
     console.error('Erro ao abrir o banco de dados:', err.message);
   } else {
     console.log('Banco de dados conectado.');
+
+    // Cria a tabela já com a coluna entidade
     db.run(`CREATE TABLE IF NOT EXISTS oportunidades (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entidade TEXT,
       atividade TEXT NOT NULL,
       descricao TEXT NOT NULL,
       local TEXT NOT NULL,
       data TEXT NOT NULL,
       area TEXT
     )`);
-  }
+    }
 });
 
 // Rotas CRUD
@@ -34,10 +37,10 @@ app.get('/oportunidades', (req, res) => {
 });
 
 app.post('/oportunidades', (req, res) => {
-  const { atividade, descricao, local, data, area } = req.body;
+  const { entidade, atividade, descricao, local, data, area } = req.body;
   db.run(
-    'INSERT INTO oportunidades (atividade, descricao, local, data, area) VALUES (?, ?, ?, ?, ?)',
-    [atividade, descricao, local, data, area],
+    'INSERT INTO oportunidades (entidade, atividade, descricao, local, data, area) VALUES (?, ?, ?, ?, ?, ?)',
+    [entidade, atividade, descricao, local, data, area],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ id: this.lastID });
@@ -46,10 +49,10 @@ app.post('/oportunidades', (req, res) => {
 });
 
 app.put('/oportunidades/:id', (req, res) => {
-  const { atividade, descricao, local, data, area } = req.body;
+  const { entidade, atividade, descricao, local, data, area } = req.body;
   db.run(
-    'UPDATE oportunidades SET atividade = ?, descricao = ?, local = ?, data = ?, area = ? WHERE id = ?',
-    [atividade, descricao, local, data, area, req.params.id],
+    'UPDATE oportunidades SET entidade = ?, atividade = ?, descricao = ?, local = ?, data = ?, area = ? WHERE id = ?',
+    [entidade, atividade, descricao, local, data, area, req.params.id],
     function (err) {
       if (err) return res.status(500).json({ error: err.message });
       res.json({ changes: this.changes });
