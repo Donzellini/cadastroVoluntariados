@@ -1,5 +1,7 @@
 const API_URL = 'http://localhost:3001/oportunidades';
 let dt = null;
+let cache = []; // manter dados para localizar registro na edição
+let editId = null;
 
 function formatDate(value) {
   if (!value) return '—';
@@ -34,9 +36,24 @@ function initDataTableIfAvailable() {
     info: false,
     ordering: true,
     scrollCollapse: true,
-    scrollY: '50vh'
+    scrollY: '50vh',
+    columnDefs: [
+      { orderable: false, targets: -1 }
+    ]
   });
   return dt;
+}
+
+function actionButtons(id) {
+  return `
+    <div class="btn-group btn-group-sm" role="group">
+      <button class="btn btn-outline-primary" data-action="edit" data-id="${id}" title="Editar">
+        <i class="bi bi-pencil-square"></i>
+      </button>
+      <button class="btn btn-outline-danger" data-action="delete" data-id="${id}" title="Excluir">
+        <i class="bi bi-trash"></i>
+      </button>
+    </div>`;
 }
 
 function renderFallbackDOM(data) {
@@ -46,7 +63,7 @@ function renderFallbackDOM(data) {
   if (!data || data.length === 0) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = 6;
+    td.colSpan = 7;
     td.className = 'text-center text-muted py-4';
     td.textContent = 'Nenhuma oportunidade encontrada.';
     tr.appendChild(td);
@@ -65,7 +82,9 @@ function renderFallbackDOM(data) {
     badge.className = `badge ${getAreaBadgeClass(o.area)}`;
     badge.textContent = o.area || 'Sem área';
     c6.appendChild(badge);
-    tr.append(c1, c2, c3, c4, c5, c6);
+    const c7 = document.createElement('td');
+    c7.innerHTML = actionButtons(o.id);
+    tr.append(c1, c2, c3, c4, c5, c6, c7);
     tbody.appendChild(tr);
   });
 }
@@ -84,7 +103,8 @@ function renderUsingDataTables(data) {
       o.descricao || '—',
       o.local || '—',
       formatDate(o.data),
-      `<span class="badge ${getAreaBadgeClass(o.area)}">${o.area || 'Sem área'}</span>`
+      `<span class="badge ${getAreaBadgeClass(o.area)}">${o.area || 'Sem área'}</span>`,
+      actionButtons(o.id)
     ]);
     table.rows.add(rows);
   }
@@ -96,17 +116,72 @@ function fetchOportunidades() {
     .then(res => res.json())
     .then(data => {
       const arr = Array.isArray(data) ? data : [];
+      cache = arr; // atualizar cache
       renderUsingDataTables(arr);
     })
     .catch(() => {
+      cache = [];
       renderUsingDataTables([]);
     });
+}
+
+function resetFormState() {
+  const form = document.getElementById('form-oportunidade');
+  form.reset();
+  editId = null;
+  document.getElementById('id').value = '';
+  document.getElementById('btn-submit-text').textContent = 'Cadastrar';
+  document.getElementById('form-mode-label').textContent = 'Nova Oportunidade';
+  document.getElementById('btn-cancelar-edicao').classList.add('d-none');
+  document.getElementById('edit-indicator').classList.add('d-none');
+  document.getElementById('btn-submit').classList.remove('btn-primary');
+  document.getElementById('btn-submit').classList.add('btn-success');
+}
+
+//preenche o formulário da tela para edição da oportunidade que foi clicada
+function fillFormForEdit(item) {
+  if (!item) return;
+  editId = item.id;
+  document.getElementById('id').value = item.id;
+  document.getElementById('entidade').value = item.entidade || '';
+  document.getElementById('atividade').value = item.atividade || '';
+  document.getElementById('descricao').value = item.descricao || '';
+  document.getElementById('local').value = item.local || '';
+  document.getElementById('data').value = item.data || '';
+  document.getElementById('area').value = item.area || '';
+  document.getElementById('btn-submit-text').textContent = 'Salvar Alterações';
+  document.getElementById('form-mode-label').textContent = 'Editar Oportunidade';
+  document.getElementById('btn-cancelar-edicao').classList.remove('d-none');
+  document.getElementById('edit-indicator').classList.remove('d-none');
+  document.getElementById('btn-submit').classList.remove('btn-success');
+  document.getElementById('btn-submit').classList.add('btn-primary');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function submitCreate(data) {
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+}
+
+function submitUpdate(id, data) {
+  return fetch(`${API_URL}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+}
+
+function submitDelete(id) {
+  return fetch(`${API_URL}/${id}`, { method: 'DELETE' });
 }
 
 document.getElementById('form-oportunidade').addEventListener('submit', function(e) {
   e.preventDefault();
   const form = e.target;
-  const oportunidade = {
+  const payload = {
     entidade: form.entidade.value,
     atividade: form.atividade.value,
     descricao: form.descricao.value,
@@ -114,21 +189,37 @@ document.getElementById('form-oportunidade').addEventListener('submit', function
     data: form.data.value,
     area: form.area.value
   };
-  fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(oportunidade)
-  })
-    .then(() => {
-      form.reset();
-      fetchOportunidades();
-    })
-    .catch(() => {
-      fetchOportunidades();
-    });
+
+  const op = editId ? submitUpdate(editId, payload) : submitCreate(payload);
+  op.then(() => {
+    resetFormState();
+    fetchOportunidades();
+  }).catch(() => fetchOportunidades());
 });
 
-// Inicializa após carregar scripts
+// Cancelar edição
+const btnCancelar = document.getElementById('btn-cancelar-edicao');
+btnCancelar.addEventListener('click', () => resetFormState());
+
+// Delegação de eventos para ações de tabela (funciona para DataTables e fallback se der errado)
+const tabela = document.getElementById('tabela-oportunidades');
+tabela.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const id = btn.getAttribute('data-id');
+  const action = btn.getAttribute('data-action');
+  if (!id) return;
+  const item = cache.find(o => String(o.id) === String(id));
+  if (action === 'edit') {
+    fillFormForEdit(item);
+  } else if (action === 'delete') {
+    if (confirm('Confirma a exclusão desta oportunidade?')) {
+      submitDelete(id).then(() => fetchOportunidades());
+    }
+  }
+});
+
+// Inicializa
 window.addEventListener('load', () => {
   initDataTableIfAvailable();
   fetchOportunidades();
