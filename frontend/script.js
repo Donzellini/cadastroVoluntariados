@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3001/oportunidades';
+const API_URL = 'https://cadastro-voluntariado-backend.fly.dev/oportunidades';
 let dt = null;
 let cache = []; // manter dados para localizar registro na edição
 let editId = null;
