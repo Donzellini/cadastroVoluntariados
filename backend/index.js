@@ -3,13 +3,15 @@ import sqlite3 from 'sqlite3';
 import cors from 'cors';
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 
 app.use(cors());
 app.use(express.json());
 
+const dbPath = process.env.DATABASE_URL || '../database/voluntariado.db';
+
 // Inicializa o banco de dados SQLite
-const db = new sqlite3.Database('../database/voluntariado.db', (err) => {
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Erro ao abrir o banco de dados:', err.message);
   } else {
