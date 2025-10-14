@@ -17,7 +17,7 @@ Projeto simples para cadastro, listagem e filtro de oportunidades de voluntariad
    ```bash
    npm start
    ```
-   O backend ficará disponível em `http://localhost:3001`.
+   O backend ficará disponível em `http://localhost:3000`.
 
 ### Frontend
 1. Acesse a pasta `frontend`.

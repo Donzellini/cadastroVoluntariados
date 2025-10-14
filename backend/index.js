@@ -3,7 +3,7 @@ import sqlite3 from 'sqlite3';
 import cors from 'cors';
 
 const app = express();
-const PORT = 3001;
+const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -15,7 +15,7 @@ const db = new sqlite3.Database('../database/voluntariado.db', (err) => {
   } else {
     console.log('Banco de dados conectado.');
 
-    // Cria a tabela já com a coluna entidade
+    // Cria a tabela jï¿½ com a coluna entidade
     db.run(`CREATE TABLE IF NOT EXISTS oportunidades (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       entidade TEXT,
