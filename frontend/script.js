@@ -1,4 +1,28 @@
 const API_URL = 'https://cadastro-voluntariado-backend.fly.dev/oportunidades';
+// const API_URL = 'http://localhost:3001/oportunidades';
+
+function getToken() {
+  return localStorage.getItem('token');
+}
+
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${getToken()}`
+  };
+}
+
+function verificarAutenticacao() {
+  if (!getToken()) window.location.href = 'login.html';
+}
+
+function fazerLogout() {
+  localStorage.removeItem('token');
+  window.location.href = 'login.html';
+}
+
+verificarAutenticacao();
+
 let dt = null;
 let cache = []; // manter dados para localizar registro na edição
 let editId = null;
@@ -112,7 +136,7 @@ function renderUsingDataTables(data) {
 }
 
 function fetchOportunidades() {
-  fetch(API_URL)
+  fetch(API_URL, { headers: authHeaders() })
     .then(res => res.json())
     .then(data => {
       const arr = Array.isArray(data) ? data : [];
@@ -161,7 +185,7 @@ function fillFormForEdit(item) {
 function submitCreate(data) {
   return fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify(data)
   });
 }
@@ -169,7 +193,7 @@ function submitCreate(data) {
 function submitUpdate(id, data) {
   return fetch(`${API_URL}/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(),
     body: JSON.stringify(data)
   });
 }

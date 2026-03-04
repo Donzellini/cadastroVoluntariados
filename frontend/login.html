@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Login — Voluntariado</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="min-height:100vh">
+  <div class="card shadow p-4" style="width:100%;max-width:400px">
+    <h1 class="h4 text-center text-success fw-bold mb-4">🤝 Voluntariado — Login</h1>
+
+    <div id="msg-erro" class="alert alert-danger d-none"></div>
+    <div id="msg-sucesso" class="alert alert-success d-none"></div>
+
+    <!-- Formulário de Login -->
+    <div id="secao-login">
+      <h2 class="h6 text-muted mb-3">Entrar na plataforma</h2>
+      <div class="mb-3">
+        <input type="email" id="login-email" class="form-control" placeholder="E-mail">
+      </div>
+      <div class="mb-3">
+        <input type="password" id="login-senha" class="form-control" placeholder="Senha">
+      </div>
+      <button onclick="fazerLogin()" class="btn btn-success w-100">Entrar</button>
+      <hr>
+      <p class="text-center small">Não tem conta?
+        <a href="#" onclick="alternarSecao()">Cadastre-se</a>
+      </p>
+    </div>
+
+    <!-- Formulário de Cadastro -->
+    <div id="secao-cadastro" class="d-none">
+      <h2 class="h6 text-muted mb-3">Criar conta</h2>
+      <div class="mb-3">
+        <input type="email" id="reg-email" class="form-control" placeholder="E-mail">
+      </div>
+      <div class="mb-3">
+        <input type="password" id="reg-senha" class="form-control" placeholder="Senha">
+      </div>
+      <button onclick="fazerCadastro()" class="btn btn-outline-success w-100">Criar conta</button>
+      <hr>
+      <p class="text-center small">Já tem conta?
+        <a href="#" onclick="alternarSecao()">Entrar</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const API = 'https://cadastro-voluntariado-backend.fly.dev';
+
+    function alternarSecao() {
+      document.getElementById('secao-login').classList.toggle('d-none');
+      document.getElementById('secao-cadastro').classList.toggle('d-none');
+      limparMensagens();
+    }
+
+    function mostrarErro(msg) {
+      const el = document.getElementById('msg-erro');
+      el.textContent = msg;
+      el.classList.remove('d-none');
+    }
+
+    function mostrarSucesso(msg) {
+      const el = document.getElementById('msg-sucesso');
+      el.textContent = msg;
+      el.classList.remove('d-none');
+    }
+
+    function limparMensagens() {
+      document.getElementById('msg-erro').classList.add('d-none');
+      document.getElementById('msg-sucesso').classList.add('d-none');
+    }
+
+    async function fazerLogin() {
+      limparMensagens();
+      const email = document.getElementById('login-email').value;
+      const senha = document.getElementById('login-senha').value;
+
+      const res = await fetch(`${API}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      });
+
+      const data = await res.json();
+      if (!res.ok) return mostrarErro(data.error || 'Erro ao fazer login.');
+
+      localStorage.setItem('token', data.token);
+      window.location.href = 'index.html';
+    }
+
+    async function fazerCadastro() {
+      limparMensagens();
+      const email = document.getElementById('reg-email').value;
+      const senha = document.getElementById('reg-senha').value;
+
+      const res = await fetch(`${API}/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      });
+
+      const data = await res.json();
+      if (!res.ok) return mostrarErro(data.error || 'Erro ao cadastrar.');
+
+      mostrarSucesso('Conta criada! Faça login.');
+      setTimeout(alternarSecao, 1500);
+    }
+  </script>
+</body>
+</html>
