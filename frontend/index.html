@@ -8,6 +8,35 @@
   <link href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <!-- Autocomplete CSS -->
+  <style>
+    .autocomplete-lista {
+      position: absolute;
+      z-index: 9999;
+      background: #fff;
+      border: 1px solid #ced4da;
+      border-radius: 0 0 8px 8px;
+      width: 100%;
+      max-height: 220px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .autocomplete-lista .item {
+      padding: 10px 14px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .autocomplete-lista .item:hover {
+      background: #f0fff4;
+      color: #198754;
+    }
+    .autocomplete-wrapper {
+      position: relative;
+    }
+  </style>
 </head>
 <body class="bg-light">
   <div class="container py-5">
@@ -44,9 +73,21 @@
             <input type="text" name="descricao" class="form-control" id="descricao" placeholder="Descrição" required>
             <label for="descricao"><i class="bi bi-card-text me-1" aria-hidden="true"></i>Descrição</label>
           </div>
-          <div class="col-md-4 form-floating">
-            <input type="text" name="local" class="form-control" id="local" placeholder="Local" required>
-            <label for="local"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>Local</label>
+          <div class="col-md-4 autocomplete-wrapper">
+          <div class="form-floating">
+            <input
+              type="text"
+              name="local"
+              class="form-control"
+              id="local"
+              placeholder="Local"
+              autocomplete="off"
+              required>
+            <label for="local">
+              <i class="bi bi-geo-alt me-1"></i>Local
+            </label>
+          </div>
+          <div id="autocomplete-lista" class="autocomplete-lista d-none"></div>
           </div>
           <div class="col-md-4 form-floating">
             <input type="date" name="data" class="form-control" id="data" placeholder="Data" required>
@@ -72,6 +113,25 @@
             </button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- Botão para mostrar/ocultar o mapa -->
+    <div class="text-end mb-3">
+      <button id="btn-toggle-mapa" class="btn btn-outline-success">
+        <i class="bi bi-map me-1"></i> Ver Mapa de Oportunidades
+      </button>
+    </div>
+
+    <!-- Painel do mapa (oculto inicialmente) -->
+    <div id="painel-mapa" class="card shadow-sm mb-4 d-none">
+      <div class="card-header bg-success text-white">
+        <h2 class="h5 mb-0">
+          <i class="bi bi-geo-alt-fill me-2"></i>Mapa de Oportunidades
+        </h2>
+      </div>
+      <div class="card-body p-0">
+        <div id="mapa" style="height: 450px; width: 100%; border-radius: 0 0 12px 12px;"></div>
       </div>
     </div>
 
@@ -105,6 +165,7 @@
 
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

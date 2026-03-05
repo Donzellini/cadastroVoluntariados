@@ -1,5 +1,5 @@
 const API_URL = 'https://cadastro-voluntariado-backend.fly.dev/oportunidades';
-// const API_URL = 'http://localhost:3001/oportunidades';
+//const API_URL = 'http://localhost:3001/oportunidades';
 
 function getToken() {
   return localStorage.getItem('token');
@@ -247,4 +247,152 @@ tabela.addEventListener('click', (e) => {
 window.addEventListener('load', () => {
   initDataTableIfAvailable();
   fetchOportunidades();
+});
+
+// ─── MAPA ────────────────────────────────────────────────────────────────────
+// ─── LEAFLET + NOMINATIM ─────────────────────────────────────────────────────
+let mapaObj = null;
+let marcadores = [];
+let mapaIniciado = false;
+
+// Toggle do mapa
+document.getElementById('btn-toggle-mapa').addEventListener('click', () => {
+  const painel = document.getElementById('painel-mapa');
+  const aberto = !painel.classList.contains('d-none');
+
+  if (aberto) {
+    painel.classList.add('d-none');
+    document.getElementById('btn-toggle-mapa').innerHTML =
+      '<i class="bi bi-map me-1"></i> Ver Mapa de Oportunidades';
+    return;
+  }
+
+  painel.classList.remove('d-none');
+  document.getElementById('btn-toggle-mapa').innerHTML =
+    '<i class="bi bi-map-fill me-1"></i> Ocultar Mapa';
+
+  if (!mapaIniciado) {
+    iniciarMapa();
+  } else {
+    atualizarMarcadores();
+  }
+});
+
+function iniciarMapa() {
+  mapaObj = L.map('mapa').setView([-15.7801, -47.9292], 5);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19
+  }).addTo(mapaObj);
+
+  mapaIniciado = true;
+  atualizarMarcadores();
+}
+
+function limparMarcadores() {
+  marcadores.forEach(m => mapaObj.removeLayer(m));
+  marcadores = [];
+}
+
+async function geocodificarNominatim(endereco) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(endereco + ', Brasil')}&format=json&limit=1`;
+  try {
+    const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+    const data = await res.json();
+    if (!data || data.length === 0) return null;
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  } catch {
+    return null;
+  }
+}
+
+async function atualizarMarcadores() {
+  limparMarcadores();
+  if (!cache || cache.length === 0) return;
+
+  const bounds = [];
+
+  for (const op of cache) {
+    if (!op.local) continue;
+
+    const coords = await geocodificarNominatim(op.local);
+    if (!coords) continue;
+
+    bounds.push([coords.lat, coords.lng]);
+
+    const marcador = L.marker([coords.lat, coords.lng])
+      .addTo(mapaObj)
+      .bindPopup(`
+        <div style="min-width:180px">
+          <strong>${op.atividade}</strong><br>
+          <span style="color:#666">${op.entidade || ''}</span><br>
+          📍 ${op.local}<br>
+          📅 ${formatDate(op.data)}<br>
+          🏷️ ${op.area || 'Sem área'}
+        </div>
+      `);
+
+    marcadores.push(marcador);
+    await new Promise(r => setTimeout(r, 1000));
+  }
+
+  if (bounds.length > 0) mapaObj.fitBounds(bounds);
+}
+
+// ─── AUTOCOMPLETE DE ENDEREÇO ────────────────────────────────────────────────
+let autocompleteTimer = null;
+const inputLocal = document.getElementById('local');
+const listaAutocomplete = document.getElementById('autocomplete-lista');
+
+inputLocal.addEventListener('input', () => {
+  clearTimeout(autocompleteTimer);
+  const termo = inputLocal.value.trim();
+
+  if (termo.length < 3) {
+    listaAutocomplete.classList.add('d-none');
+    listaAutocomplete.innerHTML = '';
+    return;
+  }
+
+  // Aguarda 500ms após o usuário parar de digitar
+  autocompleteTimer = setTimeout(() => buscarSugestoes(termo), 500);
+});
+
+async function buscarSugestoes(termo) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(termo + ', Brasil')}&format=json&limit=5&addressdetails=1`;
+  try {
+    const res = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+    const data = await res.json();
+
+    listaAutocomplete.innerHTML = '';
+
+    if (!data || data.length === 0) {
+      listaAutocomplete.classList.add('d-none');
+      return;
+    }
+
+    data.forEach(lugar => {
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.textContent = lugar.display_name;
+      item.addEventListener('click', () => {
+        inputLocal.value = lugar.display_name;
+        listaAutocomplete.classList.add('d-none');
+        listaAutocomplete.innerHTML = '';
+      });
+      listaAutocomplete.appendChild(item);
+    });
+
+    listaAutocomplete.classList.remove('d-none');
+  } catch {
+    listaAutocomplete.classList.add('d-none');
+  }
+}
+
+// Fecha a lista ao clicar fora
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.autocomplete-wrapper')) {
+    listaAutocomplete.classList.add('d-none');
+  }
 });
