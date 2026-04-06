@@ -136,13 +136,13 @@ fetch('http://localhost:3001/oportunidades', {
 });
 ```
 
-#### 4. **Middleware de Proteção** (`autenticar`)
+#### 4. **Middleware de Proteção** (`autenticar.js`)
 
 Todas as rotas que manipulam oportunidades utilizam o middleware `autenticar`:
 
 ```javascript
-// Exemplo de rota protegida
-app.get('/oportunidades', autenticar, (req, res) => {
+// Exemplo de rota protegida em routes/oportunidades.js
+router.get('/', autenticar, (req, res) => {
   // Código executado apenas se token for válido
 });
 ```
@@ -385,6 +385,14 @@ curl "https://nominatim.openstreetmap.org/search?q=Av%20Paulista%2C%20S%C3%A3o%2
 ## Arquitetura e Tecnologias
 
 ### Backend (Node.js + Express)
+
+**Estrutura de Arquivos:**
+O backend possui uma arquitetura modular por responsabilidade para facilitar a manutenção:
+- `index.js` - Ponto de entrada e configuração base do Express.
+- `database.js` - Isolamento da conexão e inicialização das tabelas no SQLite.
+- `middleware/autenticar.js` - Middleware para validação do Token JWT.
+- `routes/auth.js` - Rotas e lógicas focadas apenas em Registro/Login.
+- `routes/oportunidades.js` - Rotas e lógicas do CRUD das oportunidades.
 
 **Dependências:**
 - **express** - framework web
