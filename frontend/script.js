@@ -199,7 +199,10 @@ function submitUpdate(id, data) {
 }
 
 function submitDelete(id) {
-  return fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+  return fetch(`${API_URL}/${id}`, { 
+    method: 'DELETE',
+    headers: authHeaders()
+  });
 }
 
 document.getElementById('form-oportunidade').addEventListener('submit', function(e) {
